@@ -1,14 +1,36 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
+#include <assert.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdbool.h>
+
+#define LONGUEUR_SUITE 1000
+
+/*
+struct Suite {
+    int valeur;
+    struct Suite* suivant;
+};
+*/
 
 int calculerPGCD(int nombre1, int nombre2);
 bool determinerEstPremier(int nombre);
 int calculerPeriode(int x0, int a, int c, int m);
-void genererSuite(int x0, int a, int c, int m);
+void genererSuite(double* suiteXn, int x0, int a, int c, int m);
+void calculerUn(double suiteXn[], double suiteUn[], int m);
+void calculerYn(double suiteUn[], double suiteYn[]);
+void frequence(double suiteYn[]);
+void test(void);
+
+/*
+void ajouterDansListe(struct Suite** suite, int x);
+*/
+
 
 int main(void) {
+    /* Test du programme */
+
+    test();
+
     /* Declaration des coefficients */
 
     int x0, a, c, m;
@@ -120,17 +142,26 @@ int main(void) {
         periode = calculerPeriode(x0, a, c, m);
     }
 
-    if (periode == -1) {
-        printf("[ERREUR] : l'allocation de la memoire a echouee\n\n");
-    } else {
-        printf("La periode de la suite est de %d\n\n", periode);
-    }
+    printf("La periode de la suite est de %d\n\n", periode);
 
     /* Generation de la suite de nombres pseudo-aleatoires */
 
-    printf("\n-- GENERATION DE LA SUITE PSEUDO-ALEATOIRE --\n\n");
+    printf("-- GENERATION DE LA SUITE PSEUDO-ALEATOIRE --\n\n");
 
-    genererSuite(x0, a, c, m);
+    double suiteXn[LONGUEUR_SUITE];
+
+    genererSuite(suiteXn, x0, a, c, m);
+
+    /* Test des frequences */
+
+    printf("-- TEST DES FREQUENCES --\n\n");
+
+    double suiteUn[LONGUEUR_SUITE], suiteYn[LONGUEUR_SUITE];
+
+    calculerUn(suiteXn, suiteUn, m);
+    calculerYn(suiteUn, suiteYn);
+
+    frequence(suiteYn);
 
     return 0;
 }
@@ -162,44 +193,141 @@ bool determinerEstPremier(int nombre) {
 }
 
 int calculerPeriode(int x0, int a, int c, int m) {
-    int periode;
-    int x = x0;
-    int etape = 0;
+    int i = 0;
+    int x = (a * x0 + c) % m;
 
-    int* suite = malloc(m * sizeof(int));
+    while (x != x0) {
+        int next = (a * x + c) % m;
+        x = next;
 
-    if (suite == NULL) {
-        return -1;
+        i++;
     }
 
-    for (int i = 0; i < m; i++) {
-        suite[i] = -1;
-    }
-
-    while (suite[x] == -1) {
-        suite[x] = etape;
-        x = (a * x + c) % m;
-        etape++;
-    }
-
-    periode = etape - suite[x];
-
-    free(suite);
-
-    return periode;
+    return i + 1;
 }
 
-void genererSuite(int x0, int a, int c, int m) {
+void genererSuite(double* suiteXn, int x0, int a, int c, int m) {
     int x = x0;
 
+    suiteXn[0] = x;
     printf("%d", x);
 
-    for (int i = 1; i < m; i++) {
+    for (int i = 1; i < LONGUEUR_SUITE; i++) {
         x = (a * x + c) % m;
-
-        printf(" ");
-        printf("%d", x);
+        printf(" %d", x);
+        suiteXn[i] = x;
     }
 
     printf("\n\n");
+}
+
+void calculerUn(double suiteXn[], double suiteUn[], int m) {
+    for (int i = 0; i < LONGUEUR_SUITE; i++) {
+        suiteUn[i] = suiteXn[i] / m;
+    }
+}
+
+void calculerYn(double suiteUn[], double suiteYn[]) {
+    for (int i = 0; i < LONGUEUR_SUITE; i++) {
+        suiteYn[i] = ceil(suiteUn[i] * 10);
+    }
+}
+
+int trouverRepetition(double suiteYn[], int x) {
+    int repetition = 0;
+
+    for (int i = 0; i < LONGUEUR_SUITE; i++) {
+        if (suiteYn[i] == x) {
+            repetition++;
+        }
+    }
+
+    return repetition;
+}
+
+void frequence(double suiteYn[]) {
+    int totalRi = 0;
+    double totalPi = 0;
+    double totalNpi = 0;
+    double totalKhi = 0;
+
+    printf("Xi1 - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
+
+    printf("******************************\n");
+
+    for (int i = 0; i < 10; i++) {
+        int ri = trouverRepetition(suiteYn, i);
+        double pi = 0.1;
+        double npi = LONGUEUR_SUITE * pi;
+        double khi = pow(ri - npi, 2) / npi;
+
+        totalRi += ri;
+        totalPi += pi;
+        totalNpi += npi;
+        totalKhi += khi;
+
+        printf("%d - %d - 1/10 - %.lf - %.2lf\n", i, ri, npi, khi);
+    }
+
+    printf("******************************\n");
+
+    printf("Total - %d - %.lf - %.lf - %.2lf\n", totalRi, totalPi, totalNpi, totalKhi);
+}
+
+/*
+void ajouterDansListe(struct Suite** suite, int x) {
+    struct Suite* nouveau = malloc(sizeof(struct Suite));
+
+    if (!nouveau) {
+        return;
+    }
+
+    nouveau->valeur = x;
+    nouveau->suivant = NULL;
+
+    if (*suite == NULL) {
+        *suite = nouveau;
+    } else {
+        struct Suite* courant = *suite;
+
+        while (courant->suivant != NULL) {
+            courant = courant->suivant;
+        }
+
+        courant->suivant = nouveau;
+    }
+}
+*/
+
+void test(void) {
+    /* Verification des hypotheses du theoreme de Hull-Dobell */
+
+    // Hypothese 1
+
+    assert(calculerPGCD(3, 5) == 1);
+    assert(calculerPGCD(15, 28) == 1);
+    assert(calculerPGCD(25, 36) == 1);
+    assert(calculerPGCD(33, 56) == 1);
+    assert(calculerPGCD(39, 80) == 1);
+
+    // Hypothese 2
+
+    assert(determinerEstPremier(2));
+    assert(determinerEstPremier(13));
+    assert(determinerEstPremier(101));
+    assert(determinerEstPremier(137));
+    assert(determinerEstPremier(199));
+
+    /* Calcul de la periode de la suite */
+
+    assert(calculerPeriode(35, 13, 65, 100) == 4);
+    assert(calculerPeriode(3, 5, 5, 8) == 8);
+    assert(calculerPeriode(7, 7, 7, 8) == 2);
+    assert(calculerPeriode(7, 5, 3, 16) == 16);
+
+    /* Calcul de la periode de la suite */
+
+    /* Generation de la suite de nombres pseudo-aleatoires */
+
+    printf("Tous les tests se sont bien passes.\n");
 }
