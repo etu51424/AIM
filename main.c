@@ -1,16 +1,18 @@
-#include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <assert.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define LONGUEUR_SUITE 1000
 
-/*
-struct Suite {
-    int valeur;
-    struct Suite* suivant;
-};
-*/
+#define POKER (10 / pow(10, 5))
+#define CARRE (450 / pow(10, 5))
+#define FULL (900 / pow(10, 5))
+#define BRELAN (7200 / pow(10, 5))
+#define DOUBLE_PAIRE (10800 / pow(10, 5))
+#define PAIRE (50400 / pow(10, 5))
 
 int calculerPGCD(int nombre1, int nombre2);
 bool determinerEstPremier(int nombre);
@@ -18,13 +20,10 @@ int calculerPeriode(int x0, int a, int c, int m);
 void genererSuite(double* suiteXn, int x0, int a, int c, int m);
 void calculerUn(double suiteXn[], double suiteUn[], int m);
 void calculerYn(double suiteUn[], double suiteYn[]);
-void frequence(double suiteYn[]);
+void testFrequences34(double suiteYn[]);
+void triBulles(int tab[], int n);
+void testPoker34(double suiteYn[]);
 void test(void);
-
-/*
-void ajouterDansListe(struct Suite** suite, int x);
-*/
-
 
 int main(void) {
     /* Test du programme */
@@ -152,16 +151,57 @@ int main(void) {
 
     genererSuite(suiteXn, x0, a, c, m);
 
-    /* Test des frequences */
+    /* Tests */
 
-    printf("-- TEST DES FREQUENCES --\n\n");
+    printf("-- TESTS --\n\n");
 
     double suiteUn[LONGUEUR_SUITE], suiteYn[LONGUEUR_SUITE];
 
     calculerUn(suiteXn, suiteUn, m);
     calculerYn(suiteUn, suiteYn);
 
-    frequence(suiteYn);
+    double alpha = 0.05;
+
+    /* Test des frequences */
+
+    printf("-- TEST DES FREQUENCES --\n\n");
+
+    // Etape 1
+
+    printf("H0: La suite de nombres pseudo aleatoire est acceptable pour ce test\n");
+    printf("H1: La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
+
+    // Etape 2
+
+    printf("Alpha = %.2lf\n\n", alpha);
+
+    // Etape 3 & 4
+    testFrequences34(suiteYn);
+
+    // Etape 5
+
+    // Etape 6
+
+    /* Test du poker */
+
+    printf("-- TEST DU POKER --\n\n");
+
+    // Etape 1
+
+    printf("H0: La suite de nombres pseudo aleatoire est acceptable pour ce test\n");
+    printf("H1: La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
+
+    // Etape 2
+
+    printf("Alpha = %.2lf\n\n", alpha);
+
+    // Etape 3 && Etape 4
+
+    testPoker34(suiteYn);
+
+    // Etape 5
+
+    // Etape 6
 
     return 0;
 }
@@ -245,13 +285,15 @@ int trouverRepetition(double suiteYn[], int x) {
     return repetition;
 }
 
-void frequence(double suiteYn[]) {
+void testFrequences34(double suiteYn[]) {
     int totalRi = 0;
     double totalPi = 0;
     double totalNpi = 0;
     double totalKhi = 0;
 
-    printf("Xi1 - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
+    // Avant regroupement
+
+    printf("Xi - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
 
     printf("******************************\n");
 
@@ -266,38 +308,164 @@ void frequence(double suiteYn[]) {
         totalNpi += npi;
         totalKhi += khi;
 
-        printf("%d - %d - 1/10 - %.lf - %.2lf\n", i, ri, npi, khi);
+        if (LONGUEUR_SUITE >= 50) {
+            printf("%d - %d - 1/10 - %.lf - %.2lf\n", i, ri, npi, khi);
+        }
+    }
+
+    if (LONGUEUR_SUITE < 50) {
+        printf("0 a 9 - %d - %lf - 1/10 - %.lf - %.2lf\n", totalRi, totalPi, totalNpi, totalKhi);
     }
 
     printf("******************************\n");
 
-    printf("Total - %d - %.lf - %.lf - %.2lf\n", totalRi, totalPi, totalNpi, totalKhi);
+    printf("Total - %d - %.lf - %.lf - %.2lf\n\n", totalRi, totalPi, totalNpi, totalKhi);
 }
 
-/*
-void ajouterDansListe(struct Suite** suite, int x) {
-    struct Suite* nouveau = malloc(sizeof(struct Suite));
-
-    if (!nouveau) {
-        return;
-    }
-
-    nouveau->valeur = x;
-    nouveau->suivant = NULL;
-
-    if (*suite == NULL) {
-        *suite = nouveau;
-    } else {
-        struct Suite* courant = *suite;
-
-        while (courant->suivant != NULL) {
-            courant = courant->suivant;
+void triBulles(int tab[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (tab[j] < tab[j + 1]) {
+                int temp = tab[j];
+                tab[j] = tab[j + 1];
+                tab[j + 1] = temp;
+            }
         }
-
-        courant->suivant = nouveau;
     }
 }
-*/
+
+void testPoker34(double suiteYn[]) {
+    // TODO : taile % 5 != 0
+
+    int poker = 0;
+    int carre = 0;
+    int full = 0;
+    int brelan = 0;
+    int doublePaire = 0;
+    int paire = 0;
+
+    for (int i = 0; i < LONGUEUR_SUITE / 5; i += 5) {
+        int tranche[10] = {0};
+
+        int a = suiteYn[i];
+        int b = suiteYn[i + 1];
+        int c = suiteYn[i + 2];
+        int d = suiteYn[i + 3];
+        int e = suiteYn[i + 4];
+
+        tranche[a]++;
+        tranche[b]++;
+        tranche[c]++;
+        tranche[d]++;
+        tranche[e]++;
+
+        triBulles(tranche, 10);
+
+        a = tranche[0];
+        b = tranche[1];
+        c = tranche[2];
+        d = tranche[3];
+        e = tranche[4];
+
+        if (a == 5) { // Poker
+            poker++;
+        }
+        if (a == 4 && b == 1) { // Carre
+            carre++;
+        }
+        if (a == 3 && b == 2) { // Full
+            full++;
+        }
+        if (a == 3 && b == 1 && c == 1) { // Brelan
+            brelan++;
+        }
+        if (a == 2 && b == 2 && c == 1) { // Double Paire
+            doublePaire++;
+        }
+        if (a == 2 && b == 1 && c == 1 && d == 1) { // Paire
+            paire++;
+        }
+    }
+
+    double khiPoker = (pow((poker - LONGUEUR_SUITE * POKER), 2)) / (LONGUEUR_SUITE * POKER);
+    double khiCarre = (pow((carre - LONGUEUR_SUITE * CARRE), 2)) / (LONGUEUR_SUITE * CARRE);
+    double khiFull = (pow((full - LONGUEUR_SUITE * FULL), 2)) / (LONGUEUR_SUITE * FULL);
+    double khiBrelan = (pow((brelan - LONGUEUR_SUITE * BRELAN), 2)) / (LONGUEUR_SUITE * BRELAN);
+    double khiDoublePaire = (pow((doublePaire - LONGUEUR_SUITE * DOUBLE_PAIRE), 2)) / (LONGUEUR_SUITE * DOUBLE_PAIRE);
+    double khiPaire = (pow((paire - LONGUEUR_SUITE * PAIRE), 2)) / (LONGUEUR_SUITE * PAIRE);
+
+    char modalites[6][13] = {
+        "Poker",
+        "Carre",
+        "Full",
+        "Brelan",
+        "Double Paire",
+        "Paire"
+    };
+
+    double donnees[6][4] = {
+        { poker, POKER, LONGUEUR_SUITE * POKER, khiPoker },
+        { carre, CARRE, LONGUEUR_SUITE * CARRE, khiCarre },
+        { full, FULL, LONGUEUR_SUITE * FULL, khiFull },
+        { brelan, BRELAN, LONGUEUR_SUITE * BRELAN, khiBrelan },
+        { doublePaire, DOUBLE_PAIRE, LONGUEUR_SUITE * DOUBLE_PAIRE, khiDoublePaire },
+        { paire, PAIRE, LONGUEUR_SUITE * PAIRE, khiPaire }
+    };
+
+    // Avant regroupement
+
+    double totalRi = 0;
+    double totalPi = 0;
+    double totalNpi = 0;
+    double totalKhi = 0;
+
+    printf("Xi1 - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
+
+    printf("******************************\n");
+
+    for (int i = 0; i < 6; i++) {
+        printf("%s - %lf - %lf - %lf - %lf\n", modalites[i], donnees[i][0], donnees[i][1], donnees[i][2], donnees[i][3]);
+
+        totalRi += donnees[i][0]; totalPi += donnees[i][1]; totalNpi += donnees[i][2]; totalKhi += donnees[i][3];
+    }
+
+    printf("******************************\n");
+
+    printf("Total - %lf - %lf - %lf - %lf\n\n", totalRi, totalPi, totalNpi, totalKhi);
+
+    // Apres regroupement
+
+    totalRi = 0;
+    totalPi = 0;
+    totalNpi = 0;
+    totalKhi = 0;
+
+    printf("Xi1 - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
+
+    printf("******************************\n");
+
+    int i = 0;
+
+    do {
+        printf("%s ", modalites[i]);
+
+        totalRi += donnees[i][0]; totalPi += donnees[i][1]; totalNpi += donnees[i][2]; totalKhi += donnees[i][3];
+
+        i++;
+    } while (i < 6 && totalNpi <= 5);
+
+    printf("- %lf - %lf - %lf - %lf\n", totalRi, totalPi, totalNpi, totalKhi);
+
+    for (int j = i; j < 6; j++) {
+        totalRi += donnees[j][0]; totalPi += donnees[j][1]; totalNpi += donnees[j][2]; totalKhi += donnees[j][3];
+        printf("%s - %lf - %lf - %lf - %lf\n", modalites[j], totalRi, totalPi, totalNpi, totalKhi);
+
+    }
+
+    printf("******************************\n");
+
+    printf("Total - %lf - %lf - %lf - %.2lf\n\n", totalRi, totalPi, totalNpi, totalKhi);
+}
 
 void test(void) {
     /* Verification des hypotheses du theoreme de Hull-Dobell */
