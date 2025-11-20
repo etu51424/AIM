@@ -1,210 +1,18 @@
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include <assert.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define LONGUEUR_SUITE 1000
 
-#define POKER (10 / pow(10, 5))
-#define CARRE (450 / pow(10, 5))
-#define FULL (900 / pow(10, 5))
-#define BRELAN (7200 / pow(10, 5))
-#define DOUBLE_PAIRE (10800 / pow(10, 5))
-#define PAIRE (50400 / pow(10, 5))
-
-int calculerPGCD(int nombre1, int nombre2);
-bool determinerEstPremier(int nombre);
-int calculerPeriode(int x0, int a, int c, int m);
-void genererSuite(double* suiteXn, int x0, int a, int c, int m);
-void calculerUn(double suiteXn[], double suiteUn[], int m);
-void calculerYn(double suiteUn[], double suiteYn[]);
-void testFrequences34(double suiteYn[]);
-void triBulles(int tab[], int n);
-void testPoker34(double suiteYn[]);
-void test(void);
-
-int main(void) {
-    /* Test du programme */
-
-    test();
-
-    /* Declaration des coefficients */
-
-    int x0, a, c, m;
-
-    /* Initialisation des valeurs des coefficients */
-
-    printf("-- INITIALISATION DES VALEURS DES COEFFICIENTS --\n\n");
-
-    printf("Valeur du coefficient m : ");
-    scanf_s("%d", &m);
-
-    while (m <= 0) {
-        printf("[ERREUR] : la valeur du coefficient m doit etre > 0\n\n");
-
-        printf("Valeur du coefficient m : ");
-        scanf_s("%d", &m);
-    }
-
-    printf("Valeur du coefficient a : ");
-    scanf_s("%d", &a);
-
-    while (a < 0 || a >= m) {
-        printf("[ERREUR] : la valeur du coefficient a doit etre >= 0 et < m\n\n");
-
-        printf("Valeur du coefficient a : ");
-        scanf_s("%d", &a);
-    }
-
-    printf("Valeur du coefficient c : ");
-    scanf_s("%d", &c);
-
-    while (c < 0 || c >= m) {
-        printf("[ERREUR] : la valeur du coefficient c doit etre >= 0 et < m\n\n");
-
-        printf("Valeur du coefficient c : ");
-        scanf_s("%d", &c);
-    }
-
-    printf("Valeur du coefficient x0 : ");
-    scanf_s("%d", &x0);
-
-    while (x0 < 0 || x0 >= m) {
-        printf("[ERREUR] : la valeur du coefficient x0 doit etre >= 0 et < m\n\n");
-
-        printf("Valeur du coefficient x0 : ");
-        scanf_s("%d", &x0);
-    }
-
-    /* Verification des hypotheses du theoreme de Hull-Dobell */
-
-    printf("-- VERIFICATION DES HYPOTHESES DU THEOREME DE HULL-DOBELL --\n\n");
-
-    bool estOK = true;
-
-    // Hypothese 1
-
-    if (calculerPGCD(c, m) != 1) {
-        printf("[HYPOTHESE 1] : c et m ne sont pas premiers entre eux\n\n");
-        estOK = false;
-    } else {
-        printf("[HYPOTHESE 1] : c et m sont premiers entre eux\n\n");
-    }
-
-    // Hypothese 2
-
-    for (int p = 2; p <= m; p++) {
-        if (determinerEstPremier(p) && (m % p) == 0) {
-            if ((a - 1) % p != 0) {
-                printf("[HYPOTHESE 2] : (a - 1) n'est pas multiple de %d\n\n", p);
-                estOK = false;
-            }
-        }
-    }
-
-    if (estOK) {
-        printf("[HYPOTHESE 2] : (a - 1) est multiple de tous les facteurs premiers de m\n\n");
-    }
-
-    // Hypothese 3
-
-    if (m % 4 == 0) {
-        if ((a - 1) % 4 != 0) {
-            printf("[HYPOTHESE 3] : m est multiple de 4 mais (a-1) ne l'est pas\n\n");
-            estOK = false;
-        } else {
-            printf("[HYPOTHESE 3] : m et (a-1) sont multiples de 4\n\n");
-        }
-    } else {
-        printf("[HYPOTHESE 3] : m n'est pas multiple de 4\n\n");
-    }
-
-    // Conclusion
-
-    if (estOK) {
-        printf("Les coefficients remplissent les conditions du theoreme de Hull-Dobell\n\n");
-    } else {
-        printf("Les coefficients ne remplissent pas toutes les conditions du theoreme du Hull-Dobell\n\n");
-    }
-
-    /* Calcul de la periode de la suite */
-
-    printf("-- CALCUL DE LA PERIODE DE LA SUITE --\n\n");
-
-    int periode;
-
-    if (estOK) {
-        periode = m;
-    } else {
-        periode = calculerPeriode(x0, a, c, m);
-    }
-
-    printf("La periode de la suite est de %d\n\n", periode);
-
-    /* Generation de la suite de nombres pseudo-aleatoires */
-
-    printf("-- GENERATION DE LA SUITE PSEUDO-ALEATOIRE --\n\n");
-
-    double suiteXn[LONGUEUR_SUITE];
-
-    genererSuite(suiteXn, x0, a, c, m);
-
-    /* Tests */
-
-    printf("-- TESTS --\n\n");
-
-    double suiteUn[LONGUEUR_SUITE], suiteYn[LONGUEUR_SUITE];
-
-    calculerUn(suiteXn, suiteUn, m);
-    calculerYn(suiteUn, suiteYn);
-
-    double alpha = 0.05;
-
-    /* Test des frequences */
-
-    printf("-- TEST DES FREQUENCES --\n\n");
-
-    // Etape 1
-
-    printf("H0: La suite de nombres pseudo aleatoire est acceptable pour ce test\n");
-    printf("H1: La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
-
-    // Etape 2
-
-    printf("Alpha = %.2lf\n\n", alpha);
-
-    // Etape 3 & 4
-    testFrequences34(suiteYn);
-
-    // Etape 5
-
-    // Etape 6
-
-    /* Test du poker */
-
-    printf("-- TEST DU POKER --\n\n");
-
-    // Etape 1
-
-    printf("H0: La suite de nombres pseudo aleatoire est acceptable pour ce test\n");
-    printf("H1: La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
-
-    // Etape 2
-
-    printf("Alpha = %.2lf\n\n", alpha);
-
-    // Etape 3 && Etape 4
-
-    testPoker34(suiteYn);
-
-    // Etape 5
-
-    // Etape 6
-
-    return 0;
-}
+#define POKER (10 / pow(10, 5)) // Probabilité théorique d'obtention d'un POKER
+#define CARRE (450 / pow(10, 5)) // Probabilité théorique d'obtention d'un CARRE
+#define FULL (900 / pow(10, 5)) // Probabilité théorique d'obtention d'un FULL
+#define BRELAN (7200 / pow(10, 5)) // Probabilité théorique d'obtention d'un BRELAN
+#define DOUBLE_PAIRE (10800 / pow(10, 5)) // Probabilité théorique d'obtention d'une double paire
+#define PAIRE (50400 / pow(10, 5)) // Probabilité théorique d'obtention d'une paire
 
 int calculerPGCD(int nombre1, int nombre2) {
     int t;
@@ -285,13 +93,11 @@ int trouverRepetition(double suiteYn[], int x) {
     return repetition;
 }
 
-void testFrequences34(double suiteYn[]) {
+double testFrequences34(double suiteYn[]) {
     int totalRi = 0;
     double totalPi = 0;
     double totalNpi = 0;
     double totalKhi = 0;
-
-    // Avant regroupement
 
     printf("Xi - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
 
@@ -320,6 +126,8 @@ void testFrequences34(double suiteYn[]) {
     printf("******************************\n");
 
     printf("Total - %d - %.lf - %.lf - %.2lf\n\n", totalRi, totalPi, totalNpi, totalKhi);
+
+    return totalKhi;
 }
 
 void triBulles(int tab[], int n) {
@@ -334,7 +142,7 @@ void triBulles(int tab[], int n) {
     }
 }
 
-void testPoker34(double suiteYn[]) {
+double testPoker34(double suiteYn[]) {
     // TODO : taile % 5 != 0
 
     int poker = 0;
@@ -367,22 +175,22 @@ void testPoker34(double suiteYn[]) {
         d = tranche[3];
         e = tranche[4];
 
-        if (a == 5) { // Poker
+        if (a == 5) { // POKER
             poker++;
         }
-        if (a == 4 && b == 1) { // Carre
+        if (a == 4 && b == 1) { // CARRE
             carre++;
         }
-        if (a == 3 && b == 2) { // Full
+        if (a == 3 && b == 2) { // FULL
             full++;
         }
-        if (a == 3 && b == 1 && c == 1) { // Brelan
+        if (a == 3 && b == 1 && c == 1) { // BRELAN
             brelan++;
         }
-        if (a == 2 && b == 2 && c == 1) { // Double Paire
+        if (a == 2 && b == 2 && c == 1) { // DOUBLE PAIRE
             doublePaire++;
         }
-        if (a == 2 && b == 1 && c == 1 && d == 1) { // Paire
+        if (a == 2 && b == 1 && c == 1 && d == 1) { // PAIRE
             paire++;
         }
     }
@@ -465,20 +273,101 @@ void testPoker34(double suiteYn[]) {
     printf("******************************\n");
 
     printf("Total - %lf - %lf - %lf - %.2lf\n\n", totalRi, totalPi, totalNpi, totalKhi);
+
+    return totalKhi;
 }
 
-void test(void) {
-    /* Verification des hypotheses du theoreme de Hull-Dobell */
+double tableKhiCarre(double alpha, int dl) {
+    FILE* table;
+    fopen_s(&table, "table.csv", "r");
 
-    // Hypothese 1
+    char tampon[1024];
+    fgets(tampon, sizeof(tampon), table);
 
+    size_t avant = 0, mtn = 0; int sauts = 0;
+    while (mtn < strlen(tampon)) {
+        if (tampon[mtn] == ',') {
+            tampon[mtn] = '.';
+        }
+
+        if (tampon[mtn] == ';' || tampon[mtn] == '\n') {
+            char extrait[10];
+            strncpy_s(extrait, sizeof(extrait), tampon + avant + 1, mtn - avant - 1);
+            double alphaValeur = atof(extrait);
+
+            if (alphaValeur == alpha) {
+                break;
+            }
+
+            avant = mtn;
+            sauts++;
+        }
+
+        mtn++;
+    }
+
+    int index = 0;
+    fgets(tampon, sizeof(tampon), table);
+    while (index < strlen(tampon))
+    {
+        int profondeur = 0;
+        while (profondeur < strlen(tampon) && tampon[profondeur] != ';') {
+            profondeur++;
+        }
+
+        char extrait[10];
+        strncpy_s(extrait, sizeof(extrait), tampon, profondeur);
+        double valeur = atof(extrait);
+
+        if (dl == valeur) {
+            break;
+        }
+        else {
+            fgets(tampon, sizeof(tampon), table);
+        }
+
+        index++;
+    }
+
+    index = 0;
+    int hop = 0;
+
+    while (index < strlen(tampon) && hop < sauts) {
+        if (tampon[index] == ',') {
+            tampon[index] = '.';
+        }
+
+        if (tampon[index] == ';') {
+            hop++;
+            avant = index;
+        }
+
+        index++;
+    }
+
+    int profondeur = avant+1;
+
+    while (profondeur < strlen(tampon) && tampon[profondeur] != ';') {
+        if (tampon[profondeur] == ',') {
+            tampon[profondeur] = '.';
+        }
+
+        profondeur++;
+    }
+
+    char extrait[10];
+
+    strncpy_s(extrait, sizeof(extrait), tampon + avant + 1, profondeur - avant);
+
+    return atof(extrait);
+}
+
+void tests(void) {
     assert(calculerPGCD(3, 5) == 1);
     assert(calculerPGCD(15, 28) == 1);
     assert(calculerPGCD(25, 36) == 1);
     assert(calculerPGCD(33, 56) == 1);
     assert(calculerPGCD(39, 80) == 1);
-
-    // Hypothese 2
 
     assert(determinerEstPremier(2));
     assert(determinerEstPremier(13));
@@ -486,16 +375,251 @@ void test(void) {
     assert(determinerEstPremier(137));
     assert(determinerEstPremier(199));
 
-    /* Calcul de la periode de la suite */
-
     assert(calculerPeriode(35, 13, 65, 100) == 4);
     assert(calculerPeriode(3, 5, 5, 8) == 8);
     assert(calculerPeriode(7, 7, 7, 8) == 2);
     assert(calculerPeriode(7, 5, 3, 16) == 16);
 
+    assert(tableKhiCarre(0.01, 1) == 6.635);
+    assert(tableKhiCarre(0.01, 2) == 9.21);
+    assert(tableKhiCarre(0.01, 3) == 11.345);
+    assert(tableKhiCarre(0.01, 4) == 13.277);
+    assert(tableKhiCarre(0.01, 5) == 15.086);
+
+    assert(tableKhiCarre(0.05, 1) == 3.841);
+    assert(tableKhiCarre(0.05, 2) == 5.991);
+    assert(tableKhiCarre(0.05, 3) == 7.815);
+    assert(tableKhiCarre(0.05, 4) == 9.488);
+    assert(tableKhiCarre(0.05, 5) == 11.070);
+
+    assert(tableKhiCarre(0.025, 1) == 5.024);
+    assert(tableKhiCarre(0.025, 2) == 7.378);
+    assert(tableKhiCarre(0.025, 3) == 9.348);
+    assert(tableKhiCarre(0.025, 4) == 11.143);
+    assert(tableKhiCarre(0.025, 5) == 12.833);
+}
+
+int main(void) {
+    /* Tests */
+
+    printf("-- TESTS --\n\n");
+
+    tests();
+
+    printf("[SUCCES]\n\n");
+
+    /* Declaration et initialisation des valeurs des coefficients */
+
+    printf("-- DECLARATION ET INITIALISATION DES VALEURS DES COEFFICIENTS --\n\n");
+
+    int x0, a, c, m;
+
+    printf("Valeur du coefficient m : ");
+    scanf_s("%d", &m);
+
+    while (m <= 0) {
+        printf("[ERREUR] : la valeur du coefficient m doit etre > 0\n\n");
+
+        printf("Valeur du coefficient m : ");
+        scanf_s("%d", &m);
+    }
+
+    printf("Valeur du coefficient a : ");
+    scanf_s("%d", &a);
+
+    while (a < 0 || a >= m) {
+        printf("[ERREUR] : la valeur du coefficient a doit etre >= 0 et < m\n\n");
+
+        printf("Valeur du coefficient a : ");
+        scanf_s("%d", &a);
+    }
+
+    printf("Valeur du coefficient c : ");
+    scanf_s("%d", &c);
+
+    while (c < 0 || c >= m) {
+        printf("[ERREUR] : la valeur du coefficient c doit etre >= 0 et < m\n\n");
+
+        printf("Valeur du coefficient c : ");
+        scanf_s("%d", &c);
+    }
+
+    printf("Valeur du coefficient x0 : ");
+    scanf_s("%d", &x0);
+
+    while (x0 < 0 || x0 >= m) {
+        printf("[ERREUR] : la valeur du coefficient x0 doit etre >= 0 et < m\n\n");
+
+        printf("Valeur du coefficient x0 : ");
+        scanf_s("%d", &x0);
+    }
+
+    printf("[SUCCES]\n\n");
+
+    /* Verification des hypotheses du theoreme de Hull-Dobell */
+
+    printf("-- VERIFICATION DES HYPOTHESES DU THEOREME DE HULL-DOBELL --\n\n");
+
+    bool estOK = true;
+
+    // Hypothese 1
+
+    if (calculerPGCD(c, m) != 1) {
+        printf("[HYPOTHESE 1] : c et m ne sont pas premiers entre eux\n\n");
+
+        estOK = false;
+    } else {
+        printf("[HYPOTHESE 1] : c et m sont premiers entre eux\n\n");
+    }
+
+    // Hypothese 2
+
+    for (int p = 2; p <= m; p++) {
+        if (determinerEstPremier(p) && (m % p) == 0) {
+            if ((a - 1) % p != 0) {
+                printf("[HYPOTHESE 2] : (a - 1) n'est pas multiple de %d\n\n", p);
+
+                estOK = false;
+            }
+        }
+    }
+
+    if (estOK) {
+        printf("[HYPOTHESE 2] : (a - 1) est multiple de tous les facteurs premiers de m\n\n");
+    }
+
+    // Hypothese 3
+
+    if (m % 4 == 0) {
+        if ((a - 1) % 4 != 0) {
+            printf("[HYPOTHESE 3] : m est multiple de 4 mais (a - 1) ne l'est pas\n\n");
+
+            estOK = false;
+        } else {
+            printf("[HYPOTHESE 3] : m et (a - 1) sont multiples de 4\n\n");
+        }
+    } else {
+        printf("[HYPOTHESE 3] : m n'est pas multiple de 4\n\n");
+    }
+
+    // Conclusion
+
+    if (estOK) {
+        printf("[CONCLUSION] : les hypotheses du theoreme de Hull-Dobell sont verifiees\n\n");
+    } else {
+        printf("[CONCLUSION] : les hypotheses du theoreme du Hull-Dobell ne sont pas toutes verifiees\n\n");
+    }
+
+    printf("[SUCCES]\n\n");
+
     /* Calcul de la periode de la suite */
+
+    printf("-- CALCUL DE LA PERIODE DE LA SUITE --\n\n");
+
+    int periode;
+
+    if (estOK) {
+        periode = m;
+    } else {
+        periode = calculerPeriode(x0, a, c, m);
+    }
+
+    printf("[RESULTAT] : la periode de la suite est de %d\n\n", periode);
+
+    printf("[SUCCES]\n\n");
 
     /* Generation de la suite de nombres pseudo-aleatoires */
 
-    printf("Tous les tests se sont bien passes.\n");
+    printf("-- GENERATION DE LA SUITE PSEUDO-ALEATOIRE --\n\n");
+
+    double suiteXn[LONGUEUR_SUITE];
+
+    genererSuite(suiteXn, x0, a, c, m);
+
+    printf("[SUCCES]\n\n");
+
+    /* Tests statistiques de validite */
+
+    printf("-- TESTS STATISTIQUES DE VALIDITE --\n\n");
+
+    double suiteUn[LONGUEUR_SUITE], suiteYn[LONGUEUR_SUITE];
+
+    calculerUn(suiteXn, suiteUn, m);
+    calculerYn(suiteUn, suiteYn);
+
+    double alpha = 0.05;
+
+    bool decisionH0 = false;
+
+    /* Test des frequences */
+
+    printf("-- TEST DES FREQUENCES --\n\n");
+
+    int dl = 9;
+
+    // Etape 1
+
+    printf("H0: La suite de nombres pseudo aleatoire est acceptable pour ce test\n");
+    printf("H1: La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
+
+    // Etape 2
+
+    printf("Alpha = %.2lf\n\n", alpha);
+
+    // Etape 3 & 4
+
+    double khiCarreFre = testFrequences34(suiteYn);
+
+    // Etape 5
+
+    if (khiCarreFre <= tableKhiCarre(alpha, 9)) {
+        decisionH0 = true;
+    }
+
+    // Etape 6
+
+    if (decisionH0) {
+        printf("[DECISION] : La suite de nombres pseudo aleatoire est acceptable pour ce test\n\n");
+    } else {
+        printf("[DECISION] : La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
+    }
+
+    printf("[SUCCES]\n\n");
+
+    /* Test du poker */
+
+    printf("-- TEST DU POKER --\n\n");
+
+    decisionH0 = false;
+
+    // Etape 1
+
+    printf("H0: La suite de nombres pseudo aleatoire est acceptable pour ce test\n");
+    printf("H1: La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
+
+    // Etape 2
+
+    printf("Alpha = %.2lf\n\n", alpha);
+
+    // Etape 3 && Etape 4
+
+    double khiCarrePoker = testPoker34(suiteYn);
+
+    // Etape 5
+
+    if (khiCarrePoker <= tableKhiCarre(alpha, 9)) {
+        decisionH0 = true;
+    }
+
+    // Etape 6
+
+    if (decisionH0) {
+        printf("[DECISION] : La suite de nombres pseudo aleatoire est acceptable pour ce test\n\n");
+    } else {
+        printf("[DECISION] : La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
+    }
+
+    printf("[SUCCES]\n\n");
+
+    return 0;
 }
