@@ -622,6 +622,177 @@ void partie1(void) {
     printf("[SUCCES]\n\n");
 }
 
+/* ---------------------------------------------------------------------------------------- */
+
+#define TEMPS_SIMULATION 90
+
+void initStations(int stations[]) {
+    /* à faire ... */
+}
+
+void nbArriveesGenerees(int* nbArriveesO, int* nbArriveesP) {
+    /* à faire ... */
+}
+
+int dureeGeneree(int stations[], int index) {
+    /* à faire ... */
+}
+
+void classStation(int ind, char classeClient[1000]) { // 1000 à voire ...
+    /* à faire ... */
+}
+
+int rechercheCoutMin(int couts[1000]) { // 1000 à voire ...
+    /* à faire ... */
+}
+
+int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
+    int nbStations = nbStationsMin;
+
+    while (nbStations <= nbStationsMax) {
+        int tempsPresenceO = 0; // Temps de présence d'un client ordinaire
+        int tempsPresencePR  = 0; // Temps de présence d'un client prioritaire relatif
+        int tempsPresencePA  = 0; // Temps de présence d'un client prioriatire absolu
+        int tempsOccupationO = 0; // Temps d'occupation d'une station par un client ordinaire
+        int tempsOccupationP = 0; // Temps d'occupation d'une station par un client prioritaire
+        int tempsInoccupation = 0; // Temps d'inoccupation d'une station
+        int pertesO = 0; // Pertes de clients ordinaires
+        int pertesP = 0; // Pertes de clients prioritaires
+
+        int stations[1000];
+        initStations(stations);
+
+        int temps = 1;
+
+        while (temps <= tempsSimul) {
+            int nbArriveesO; // Le nombre d'arrivées ordinaires
+            int nbArriveesP; // Le nombre d'arrivées prioritaires
+            nbArriveesGenerees(&nbArriveesO, &nbArriveesP);
+
+            //int nbArriveesPA = poisson(0.7);
+            int nbArriveesPA = round(0.3 * nbArriveesP);
+            int nbArriveesPR = nbArriveesP - nbArriveesPA;
+
+            int ind = 1;
+
+            while (nbArriveesPA > 0 && ind <= nbStations) {
+                if (stations[ind] == 0) {
+                    dureeGeneree(stations, ind);
+
+                    nbArriveesPA--;
+                }
+
+                ind++;
+            }
+
+            pertesP += nbArriveesPA;
+
+            ind = 1;
+
+            while (nbArriveesPR > 0 && ind <= nbStations) {
+                if (stations[ind] == 0) {
+                    dureeGeneree(stations, ind);
+                    nbArriveesPR--;
+                }
+
+                ind++;
+            }
+
+            pertesP += nbArriveesPR;
+
+            ind = 1;
+
+            while (nbArriveesO > 0 && ind <= nbStations) {
+                if (stations[ind] == 0) {
+                    dureeGeneree(stations, ind);
+
+                    nbArriveesO--;
+                }
+
+                ind++;
+            }
+
+            pertesO += nbArriveesO;
+
+            ind = 1;
+
+            while (ind <= nbStations) {
+                if (stations[ind] > 0) {
+                    char classeClient[1000]; // 1000 ? à voire...
+                    classStation(ind, classeClient);
+
+                    if (strcmp(classeClient, "Ordinaire") == 0) {
+                        tempsPresenceO++;
+                        tempsOccupationO++;
+                    }
+                    else if (strcmp(classeClient, "Prioritaire Relatif") == 0) {
+                        tempsPresencePR++;
+                        tempsOccupationP++;
+                    }
+                    else if (strcmp(classeClient, "Prioritaire Absolu") == 0) {
+                        tempsPresencePA++;
+                        tempsOccupationP++;
+                    }
+                }
+                else {
+                    tempsInoccupation++;
+                }
+            }
+
+            temps++;
+        }
+
+        couts[nbStations - nbStationsMin] =
+            15 * (tempsPresenceO / 60) +
+            35 * (tempsPresencePR / 60) +
+            45 * (tempsPresencePA / 60) +
+            28 * (tempsOccupationO / 60) +
+            33 * (tempsOccupationP / 60) +
+            18 * (tempsInoccupation / 60) +
+            15 * pertesO +
+            20 * pertesP;
+
+        nbStations++;
+    }
+
+    return rechercheCoutMin(couts);
+}
+
+void partie2(void) {
+    /* Declaration et initialisation des valeurs des paramètres */
+
+    printf("-- DECLARATION ET INITIALISATION DES VALEURS DES PARAMETRES --\n\n");
+
+    int nbStationsMin, nbStationsMax, tempsSimul;
+
+    printf("Valeur du parametre nbStationsMin : ");
+    scanf_s("%d", &nbStationsMin);
+
+    while (nbStationsMin <= 0) {
+        printf("[ERREUR] : la valeur du parametre nbStationsMin doit etre > 0\n\n");
+
+        printf("Valeur du parametre nbStationsMin : ");
+        scanf_s("%d", &nbStationsMin);
+    }
+
+    printf("Valeur du parametre nbStationsMax : ");
+    scanf_s("%d", &nbStationsMax);
+
+    while (nbStationsMax <= nbStationsMin) {
+        printf("[ERREUR] : la valeur du parametre nbStationsMax doit etre > nbStationsMin\n\n");
+
+        printf("Valeur du parametre nbStationsMax : ");
+        scanf_s("%d", &nbStationsMax);
+    }
+
+    printf("Valeur du parametre tempsSimul : ");
+    scanf_s("%d", &tempsSimul);
+
+    tempsSimul = 90;
+
+    int resultat = nbStationsOptimal(nbStationsMin, nbStationsMax, tempsSimul);
+}
+
 int main(void) {
     partie1();
 
