@@ -399,7 +399,7 @@ void tests(void) {
     assert(tableKhiCarre(0.025, 5) == 12.833);
 }
 
-int main(void) {
+void partie1(void) {
     /* Tests */
 
     printf("-- TESTS --\n\n");
@@ -620,6 +620,10 @@ int main(void) {
     }
 
     printf("[SUCCES]\n\n");
+}
 
-    return 0;
+int main(void) {
+    partie1();
+
+    return 1;
 }
