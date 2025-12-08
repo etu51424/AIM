@@ -626,16 +626,52 @@ void partie1(void) {
 
 #define TEMPS_SIMULATION 90
 
+int poisson(double lambda) {
+    double L = exp(-lambda);
+    double p = 1.0;
+    int k = 0;
+
+    do {
+        k++;
+        p *= (double)rand() / RAND_MAX; // TODO : generer une valeur pseudo aléatoire via les fonctions de la partie 1
+    } while (p > L);
+
+    return k - 1;
+}
+
+int binomial(int n, double p) {
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+        double u = (double)rand() / (double)RAND_MAX; // TODO : generer une valeur pseudo aléatoire via les fonctions de la partie 1
+        if (u < p) count++;
+    }
+    return count;
+}
+
 void initStations(int stations[]) {
-    /* à faire ... */
+    for (int i = 0; i < 1000; i++) {
+        stations[i] = 0;
+    }
 }
 
 void nbArriveesGenerees(int* nbArriveesO, int* nbArriveesP) {
-    /* à faire ... */
+    *nbArriveesO = poisson(1.5);
+    *nbArriveesP = poisson(0.7);
 }
 
 int dureeGeneree(int stations[], int index) {
-    /* à faire ... */
+    int alea = rand() % 60 + 1;
+    int duree = 0;
+
+    if (alea <= 24) duree = 1;
+    else if (alea <= 24 + 18) duree = 2;
+    else if (alea <= 24 + 18 + 10) duree = 3;
+    else if (alea <= 24 + 18 + 10 + 3) duree = 4;
+    else if (alea <= 24 + 18 + 10 + 3 + 3) duree = 5;
+    else duree = 6;
+
+    stations[index] = duree;
+    return duree;
 }
 
 void classStation(int ind, char classeClient[1000]) { // 1000 à voire ...
@@ -659,7 +695,7 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
         int pertesO = 0; // Pertes de clients ordinaires
         int pertesP = 0; // Pertes de clients prioritaires
 
-        int stations[1000];
+        int stations[100];
         initStations(stations);
 
         int temps = 1;
@@ -669,13 +705,12 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
             int nbArriveesP; // Le nombre d'arrivées prioritaires
             nbArriveesGenerees(&nbArriveesO, &nbArriveesP);
 
-            //int nbArriveesPA = poisson(0.7);
-            int nbArriveesPA = round(0.3 * nbArriveesP);
-            int nbArriveesPR = nbArriveesP - nbArriveesPA;
+            int nbArriveesPA = binomial(nbArriveesP, 0.3); // Le nombre d'arrivés prioritaires absolus
+            int nbArriveesPR = nbArriveesP - nbArriveesPA; // Le nombre d'arrivés prioritaires relatifs
 
-            int ind = 1;
+            int ind = 0;
 
-            while (nbArriveesPA > 0 && ind <= nbStations) {
+            while (nbArriveesPA > 0 && ind < nbStations) {
                 if (stations[ind] == 0) {
                     dureeGeneree(stations, ind);
 
@@ -687,9 +722,9 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
 
             pertesP += nbArriveesPA;
 
-            ind = 1;
+            ind = 0;
 
-            while (nbArriveesPR > 0 && ind <= nbStations) {
+            while (nbArriveesPR > 0 && ind < nbStations) {
                 if (stations[ind] == 0) {
                     dureeGeneree(stations, ind);
                     nbArriveesPR--;
@@ -700,9 +735,9 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
 
             pertesP += nbArriveesPR;
 
-            ind = 1;
+            ind = 0;
 
-            while (nbArriveesO > 0 && ind <= nbStations) {
+            while (nbArriveesO > 0 && ind < nbStations) {
                 if (stations[ind] == 0) {
                     dureeGeneree(stations, ind);
 
@@ -714,9 +749,9 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
 
             pertesO += nbArriveesO;
 
-            ind = 1;
+            ind = 0;
 
-            while (ind <= nbStations) {
+            while (ind < nbStations) {
                 if (stations[ind] > 0) {
                     char classeClient[1000]; // 1000 ? à voire...
                     classStation(ind, classeClient);
