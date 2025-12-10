@@ -628,9 +628,9 @@ void partie1(void) {
 #define TAILLE_MAX_FILE 1000
 
 // Structure - Client
-// classe : Classe du client // 0 = O // 1 = PR // 2 = PA
-// dureeService : Durée de service générée par le client
-// minuteArrivee : Minute d'arrivée du client
+// classe : Classe du client (0 = Ordinaire / 1 = Prioritaire Relatif / 2 = Prioritaire Absolu)
+// dureeService : Durée de service du client
+// minuteArrivee : Minute d'arrivée du client dans la file
 typedef struct {
     int classe;
     int dureeService;
@@ -638,17 +638,17 @@ typedef struct {
 } Client;
 
 // Structure - File
-// donneesClients : Données des clients
-// iPremier : Indice du permier élément
-// iDernier : Indice du dernier élément
+// donneesClients : Données des clients dans la file
+// iPremier : Indice du premier client dans la file
+// iDernier : Indice du dernier client dans la file
 typedef struct {
     Client donneesClients[TAILLE_MAX_FILE];
     int iPremier;
     int iDernier;
 } File;
 
-// Méthode - initialiser()
-// Initialise une file
+// Méthode - Initialiser()
+// Initialise une file vide
 void initialiser(File* file) {
     file->iPremier = 0;
     file->iDernier = -1;
@@ -661,7 +661,7 @@ int estVide(File* file) {
 }
 
 // Méthode - ajouterClient()
-// Ajoute un client dans une file
+// Ajoute un client à la fin d'une file
 void ajouterClient(File* file, Client client) {
     if (file->iDernier < TAILLE_MAX_FILE - 1) {
         file->iDernier++;
@@ -671,8 +671,8 @@ void ajouterClient(File* file, Client client) {
     }
 }
 
-// Méthode - retirerClient()
-// Retire un client d'une file
+// Méthode retirerClient()
+// Retire le client en tête d'une file
 Client retirerClient(File* file) {
     if (!estVide(file)) {
         Client client = file->donneesClients[file->iPremier];
@@ -690,7 +690,7 @@ Client retirerClient(File* file) {
 }
 
 // Méthode - poisson()
-// Applique la loi de Poisson
+// Génère un entier selon la loi de Poisson
 int poisson(double lambda) {
     double L = exp(-lambda);
     double p = 1.0;
@@ -698,19 +698,19 @@ int poisson(double lambda) {
 
     do {
         k++;
-        p *= (double)rand() / RAND_MAX; // TODO
+        p *= (double)rand() / RAND_MAX;
     } while (p > L);
 
     return k - 1;
 }
 
 // Méthode - binomial()
-// Applique la binomiale
+// Génère un entier selon une loi binomiale
 int binomial(int n, double p) {
     int count = 0;
 
     for (int i = 0; i < n; i++) {
-        double u = (double)rand() / RAND_MAX; // TODO
+        double u = (double)rand() / RAND_MAX;
 
         if (u < p) {
             count++;
@@ -720,23 +720,23 @@ int binomial(int n, double p) {
     return count;
 }
 
-// Méthode - initStations
-// Initialise les stations
+// Méthode - initStations()
+// Initialise des stations
 void initStations(int* stations, int nbStations) {
     for (int i = 0; i < nbStations; i++) {
         stations[i] = 0;
     }
 }
 
-// Méthode - nbArriveesGenerees
-// Gere le nombre d'arrivées générées
+// Méthode - nbArriveesGenerees()
+// Génère un nombre de clients arrivant
 void nbArriveesGenerees(int* nbArriveesO, int* nbArriveesP) {
     *nbArriveesO = poisson(1.5);
     *nbArriveesP = poisson(0.7);
 }
 
 // Méthode - dureeClient()
-// Génère la durée de service d'un client
+// Génère une durée de service d'un client selon une distribution prédéfinie
 int dureeClient() {
     int alea = rand() % 60 + 1;
 
@@ -756,7 +756,7 @@ int dureeClient() {
 }
 
 // Méthode - classStation()
-// Mémorise les classes des clients dans les stations
+// Donne une description textuelle de la classe d'un client à une station
 void classStation(int i, char classeClient[50], int classeStations[]) {
     if (classeStations[i] == 0) {
         strcpy(classeClient, "Ordinaire");
@@ -770,7 +770,7 @@ void classStation(int i, char classeClient[50], int classeStations[]) {
 }
 
 // Méthode - rechercheCoutMin()
-// Recherche le cout minimal
+// Recherche l'indice du coût minimal dans un tableau de coûts
 int rechercheCoutMin(int couts[1000], int nbStationsTestees) {
     int minIndex = 0;
     int minCout = couts[0];
@@ -813,10 +813,9 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
         initialiser(&filePA);
 
         for (int temps = 0; temps < tempsSimul; temps++) {
-            int nbArriveesO; // Le nombre d'arrivées ordinaires
-            int nbArriveesP; // Le nombre d'arrivées prioritaires
+            int nbArriveesO; // Nombre d'arrivées de clients ordinaires
+            int nbArriveesP; // Nombre d'arrivées de clients prioritaires
 
-            // ---------------- Affichage début de minute (stations) ----------------
             if (temps < 20) {
                 printf("\n[DEBUT MINUTE %d]\n\n", temps);
 
@@ -825,7 +824,9 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
 
                 for (int i = 0; i < nbStations; i++) {
                     char classeClient[50];
+
                     classStation(i, classeClient, classeStations);
+
                     printf("Station %d - %s (Duree restante: %d)\n", i, classeClient, stations[i]);
                 }
 
@@ -833,57 +834,56 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
                 printf("----------\n");
 
                 printf("File O:\n");
+
                 for (int i = fileO.iPremier; i <= fileO.iDernier; i++) {
                     Client c = fileO.donneesClients[i];
                     printf("Client %d: classe=%d, duree=%d, arrivee=%d\n", i, c.classe, c.dureeService, c.minuteArrivee);
                 }
 
                 printf("File PR:\n");
+
                 for (int i = filePR.iPremier; i <= filePR.iDernier; i++) {
                     Client c = filePR.donneesClients[i];
                     printf("Client %d: classe=%d, duree=%d, arrivee=%d\n", i, c.classe, c.dureeService, c.minuteArrivee);
                 }
 
                 printf("File PA:\n");
+
                 for (int i = filePA.iPremier; i <= filePA.iDernier; i++) {
                     Client c = filePA.donneesClients[i];
                     printf("Client %d: classe=%d, duree=%d, arrivee=%d\n", i, c.classe, c.dureeService, c.minuteArrivee);
                 }
             }
 
-            // ---------------- Génération des arrivées ----------------
             nbArriveesGenerees(&nbArriveesO, &nbArriveesP);
+
             int nbArriveesPA = binomial(nbArriveesP, 0.3);
             int nbArriveesPR = nbArriveesP - nbArriveesPA;
 
-            // Ajouter clients PA
             for (int i = 0; i < nbArriveesPA; i++) {
                 Client client;
-                client.classe = 2; // PA
+                client.classe = 2;
                 client.dureeService = dureeClient();
                 client.minuteArrivee = temps;
                 ajouterClient(&filePA, client);
             }
 
-            // Ajouter clients PR
             for (int i = 0; i < nbArriveesPR; i++) {
                 Client client;
-                client.classe = 1; // PR
+                client.classe = 1;
                 client.dureeService = dureeClient();
                 client.minuteArrivee = temps;
                 ajouterClient(&filePR, client);
             }
 
-            // Ajouter clients O
             for (int i = 0; i < nbArriveesO; i++) {
                 Client client;
-                client.classe = 0; // Ordinaire
+                client.classe = 0;
                 client.dureeService = dureeClient();
                 client.minuteArrivee = temps;
                 ajouterClient(&fileO, client);
             }
 
-            // ---------------- Affichage des nouvelles arrivées ----------------
             if (temps < 20) {
                 printf("\n[ARRIVEES DES CLIENTS]\n", temps);
                 printf("----------\n");
@@ -892,22 +892,24 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
                     Client c = fileO.donneesClients[fileO.iDernier - nbArriveesO + 1 + i];
                     printf("Ordinaire: duree = %d\n", c.dureeService);
                 }
+
                 for (int i = 0; i < nbArriveesPR; i++) {
                     Client c = filePR.donneesClients[filePR.iDernier - nbArriveesPR + 1 + i];
                     printf("Prioritaire relatif: duree = %d\n", c.dureeService);
                 }
+
                 for (int i = 0; i < nbArriveesPA; i++) {
                     Client c = filePA.donneesClients[filePA.iDernier - nbArriveesPA + 1 + i];
                     printf("Prioritaire absolu: duree = %d\n", c.dureeService);
                 }
             }
 
-            // ---------------- Affichage des files après placement ----------------
             if (temps < 20) {
                 printf("\n[FILES]\n");
                 printf("----------\n");
 
                 printf("File O:\n");
+
                 for (int i = fileO.iPremier; i <= fileO.iDernier; i++) {
                     Client c = fileO.donneesClients[i];
                     printf("Client %d: classe = %d, duree = %d, arrivee = %d\n", i, c.classe, c.dureeService, c.minuteArrivee);
@@ -916,6 +918,7 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
                 printf("\n");
 
                 printf("File PR:\n");
+
                 for (int i = filePR.iPremier; i <= filePR.iDernier; i++) {
                     Client c = filePR.donneesClients[i];
                     printf("Client %d: classe = %d, duree = %d, arrivee = %d\n", i, c.classe, c.dureeService, c.minuteArrivee);
@@ -924,13 +927,13 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
                 printf("\n");
 
                 printf("File PA:\n");
+
                 for (int i = filePA.iPremier; i <= filePA.iDernier; i++) {
                     Client c = filePA.donneesClients[i];
                     printf("Client %d: classe = %d, duree = %d, arrivee = %d\n", i, c.classe, c.dureeService, c.minuteArrivee);
                 }
             }
 
-            // ---------------- Placement des clients dans les stations ----------------
             for (int i = 0; i < nbStations; i++) {
                 if (stations[i] == 0) {
                     Client client;
@@ -949,20 +952,20 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
                 }
             }
 
-            // Nombre de clients PA en attente
             int nbPAEnAttente = filePA.iDernier - filePA.iPremier + 1;
             int nbStationsPA = 0;
+
             for (int i = 0; i < nbStations; i++) {
                 if (classeStations[i] == 2) nbStationsPA++;
             }
 
             int pertesPA = (nbPAEnAttente > 0 && nbStationsPA == nbStations) ? nbPAEnAttente : 0;
+
             pertesP += pertesPA;
 
-            // ---------------- Mise à jour des durées et temps d’occupation ----------------
             for (int i = 0; i < nbStations; i++) {
                 if (stations[i] > 0) {
-                    stations[i]--; // Décrémenter durée restante
+                    stations[i]--;
                 } else {
                     classeStations[i] = -1;
                 }
@@ -985,20 +988,20 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
                 }
             }
 
-            // ---------------- Affichage stations fin de minute ----------------
             if (temps < 20) {
                 printf("\n[STATIONS]\n");
                 printf("----------\n");
 
                 for (int i = 0; i < nbStations; i++) {
                     char classeClient[50];
+
                     classStation(i, classeClient, classeStations);
+
                     printf("Station %d: %s, duree restante: %d\n", i, classeClient, stations[i]);
                 }
             }
         }
 
-        // ---------------- Calcul des coûts ----------------
         couts[nbStations - nbStationsMin] =
             15 * ((double)tempsPresenceO / 60) +
             35 * ((double)tempsPresencePR / 60) +
@@ -1011,12 +1014,12 @@ int nbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimul) {
     }
 
     int indexOpt = rechercheCoutMin(couts, nbStationsTestees);
+
     return nbStationsMin + indexOpt;
 }
 
-// ----------------- Partie 2 -----------------
 void partie2(void) {
-    srand(time(NULL)); // initialisation de rand()
+    srand(time(NULL));
 
     /* Declaration et initialisation des valeurs des paramètres */
 
@@ -1060,12 +1063,16 @@ void partie2(void) {
 
     int resultat = nbStationsOptimal(nbStationsMin, nbStationsMax, tempsSimul);
 
-    printf("\nNombre de stations optimal : %d", resultat);
+    /* Resultat */
+
+    printf("\n-- RESULTAT --\n\n");
+
+    printf("Nombre de stations optimal : %d", resultat);
 }
 
-// ----------------- Main -----------------
 int main(void) {
     partie1();
+
     partie2();
 
     return 0;
