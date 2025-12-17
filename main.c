@@ -144,8 +144,6 @@ void triBulles(int tab[], int n) {
 }
 
 double testPoker34(double suiteYn[]) {
-    // TODO : taile % 5 != 0
-
     int poker = 0;
     int carre = 0;
     int full = 0;
@@ -555,8 +553,6 @@ void partie1(void) {
     /* Test des frequences */
 
     printf("-- TEST DES FREQUENCES --\n\n");
-
-    int dl = 9;
 
     // Etape 1
 
