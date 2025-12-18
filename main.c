@@ -818,7 +818,7 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 			uint64_t nbArriveesP; // Nombre d'arrivées de clients prioritaires
 
 			if (temps < 20) {
-				printf("\n[DEBUT MINUTE %llu]\n\n", temps + 1);
+				printf("\n[DEBUT MINUTE %llu]\n\n", temps);
 
 				printf("[STATIONS]\n");
 				printf("----------\n");
@@ -828,7 +828,7 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 
 					classToString(classeStations[i], classeClient);
 
-					printf("Station %llu - %s (Duree restante: %llu)\n", i + 1, classeClient, stations[i]);
+					printf("Station %llu - %s (Duree restante: %llu)\n", i, classeClient, stations[i]);
 				}
 
 				printf("\n[FILES]\n");
