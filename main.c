@@ -1100,7 +1100,7 @@ void partie2(void) {
 }
 
 int main(void) {
-	// partie1();
+	partie1();
 
 	partie2();
 
