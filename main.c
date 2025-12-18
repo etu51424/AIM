@@ -8,8 +8,6 @@
 #include <stdint.h>
 
 #define LONGUEUR_SUITE 5000
-#define CLASS_TAILLE 50
-#define STATION_TAILLE 500
 
 /* Probabilités théoriques */
 #define POKER (10.0 / 100000.0) // Probabilité théorique d'obtention d'un POKER
@@ -607,21 +605,22 @@ void partie1(void) {
 /* ---------------------------------------------------------------------------------------- */
 
 #define TAILLE_MAX_FILE 1000
+#define TAILLE_MAX_CLASSE 50
 
-// Enum - StatusClient
+// Enum - Classe
 typedef enum {
 	ORDINAIRE = 0,
 	PRIORITAIRE_RELATIVE = 1,
 	PRIORITAIRE_ABSOLUE = 2,
 	LIBRE = -1
-} StatusClient;
+} Classe;
 
 // Structure - Client
 // classe : Classe du client (0 = Ordinaire / 1 = Prioritaire Relatif / 2 = Prioritaire Absolu)
 // dureeService : Durée de service du client
 // minuteArrivee : Minute d'arrivée du client dans la file
 typedef struct {
-	StatusClient classe;
+	Classe classe;
 	uint64_t dureeService;
 	uint64_t minuteArrivee;
 } Client;
@@ -673,7 +672,6 @@ Client retirerClient(File* file) {
 	else {
 		printf("[ATTENTION] : LA FILE EST VIDE\n\n");
 
-		// ???
 		Client client;
 		client.classe = LIBRE;
 
@@ -754,22 +752,22 @@ uint64_t dureeClient() {
 
 // Méthode - classToString()
 // Donne une description textuelle de la classe d'un client à une station
-void classToString(StatusClient classe, char destination[]) {
+void classToString(Classe classe, char destination[]) {
 	switch (classe) {
 		case ORDINAIRE:
-			strcpy_s(destination, CLASS_TAILLE, "Ordinaire");
+			strcpy_s(destination, TAILLE_MAX_CLASSE, "Ordinaire");
 			break;
 		case PRIORITAIRE_RELATIVE:
-			strcpy_s(destination, CLASS_TAILLE, "Prioritaire Relatif");
+			strcpy_s(destination, TAILLE_MAX_CLASSE, "Prioritaire Relatif");
 			break;
 		case PRIORITAIRE_ABSOLUE:
-			strcpy_s(destination, CLASS_TAILLE, "Prioritaire Absolu");
+			strcpy_s(destination, TAILLE_MAX_CLASSE, "Prioritaire Absolu");
 			break;
 		case LIBRE:
-			strcpy_s(destination, CLASS_TAILLE, "Libre");
+			strcpy_s(destination, TAILLE_MAX_CLASSE, "Libre");
 			break;
 		default:
-			printf("[ERREUR] classe client %d n'existe pas\n", classe);
+			printf("[ERREUR] : La classe n'existe pas !", classe);
 	}
 }
 
@@ -789,10 +787,8 @@ uint64_t rechercheCoutMin(double couts[], uint64_t taille) {
 	return minIndex;
 }
 
-uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint64_t tempsSimul, bool debug) {
+uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint64_t tempsSimul) {
 	double couts[1000];
-
-	//assert(nbStationsMax - nbStationsMin < STATION_TAILLE);
 
 	for (uint64_t nbStations = nbStationsMin; nbStations <= nbStationsMax; nbStations++) {
 		double tempsPresenceO = 0; // Temps de présence d'un client ordinaire
@@ -804,33 +800,35 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 		uint64_t pertesO = 0; // Pertes de clients ordinaires
 		uint64_t pertesP = 0; // Pertes de clients prioritaires
 
-		uint64_t stations[STATION_TAILLE];
+		uint64_t stations[nbStations];
 		initStations(stations, nbStations);
 
-		StatusClient classeStations[STATION_TAILLE]; // ORDINAIRE = 0 // PR = 1 // PA = 2 // Libre = -1
+		Classe classeStations[nbStations];
 		for (uint64_t i = 0; i < nbStations; i++) {
 			classeStations[i] = LIBRE;
 		}
 
 		File fileO, filePR, filePA;
-		initialiser(&fileO);
-		initialiser(&filePR);
-		initialiser(&filePA);
+		initialiser(&fileO); // File des clients ordinaires
+		initialiser(&filePR); // File des clients prioritaires relatifs
+		initialiser(&filePA); // File des clients prioritaires absolus
 
 		for (uint64_t temps = 0; temps < tempsSimul; temps++) {
 			uint64_t nbArriveesO; // Nombre d'arrivées de clients ordinaires
 			uint64_t nbArriveesP; // Nombre d'arrivées de clients prioritaires
 
-			if (debug && temps < 20) {
-				printf("\n[DEBUT MINUTE %llu]\n\n", temps);
+			if (temps < 20) {
+				printf("\n[DEBUT MINUTE %llu]\n\n", temps + 1);
 
 				printf("[STATIONS]\n");
 				printf("----------\n");
 
-				for (uint64_t index = 0; index < nbStations; index++) {
-					char classeClient[CLASS_TAILLE];
-					classToString(classeStations[index], classeClient);
-					printf("Station %llu - %s (Duree restante: %llu)\n", index, classeClient, stations[index]);
+				for (uint64_t i = 0; i < nbStations; i++) {
+					char classeClient[TAILLE_MAX_CLASSE];
+
+					classToString(classeStations[i], classeClient);
+
+					printf("Station %llu - %s (Duree restante: %llu)\n", i + 1, classeClient, stations[i]);
 				}
 
 				printf("\n[FILES]\n");
@@ -839,25 +837,25 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 				printf("File O:\n");
 
 				for (uint64_t i = fileO.iPremier; i < fileO.iDernier; i++) {
-					Client c = fileO.donneesClients[i];
-					printf("Client %llu: classe=%d, duree=%llu, arrivee=%llu\n",
-						i, c.classe, c.dureeService, c.minuteArrivee);
+					Client client = fileO.donneesClients[i];
+
+					printf("Client %llu: classe=%d, duree=%llu, arrivee=%llu\n", i, client.classe, client.dureeService, client.minuteArrivee);
 				}
 
 				printf("File PR:\n");
 
 				for (uint64_t i = filePR.iPremier; i < filePR.iDernier; i++) {
-					Client c = filePR.donneesClients[i];
-					printf("Client %llu: classe=%d, duree=%llu, arrivee=%llu\n",
-						i, c.classe, c.dureeService, c.minuteArrivee);
+					Client client = filePR.donneesClients[i];
+
+					printf("Client %llu: classe=%d, duree=%llu, arrivee=%llu\n", i, client.classe, client.dureeService, client.minuteArrivee);
 				}
 
 				printf("File PA:\n");
 
 				for (uint64_t i = filePA.iPremier; i < filePA.iDernier; i++) {
-					Client c = filePA.donneesClients[i];
-					printf("Client %llu: classe=%d, duree=%llu, arrivee=%llu\n",
-						i, c.classe, c.dureeService, c.minuteArrivee);
+					Client client = filePA.donneesClients[i];
+
+					printf("Client %llu: classe=%d, duree=%llu, arrivee=%llu\n", i, client.classe, client.dureeService, client.minuteArrivee);
 				}
 			}
 
@@ -868,45 +866,54 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 
 			for (uint64_t i = 0; i < nbArriveesPA; i++) {
 				Client client;
+
 				client.classe = PRIORITAIRE_ABSOLUE;
 				client.dureeService = dureeClient();
 				client.minuteArrivee = temps;
+
 				ajouterClient(&filePA, client);
 			}
 
 			for (uint64_t i = 0; i < nbArriveesPR; i++) {
 				Client client;
+
 				client.classe = PRIORITAIRE_RELATIVE;
 				client.dureeService = dureeClient();
 				client.minuteArrivee = temps;
+
 				ajouterClient(&filePR, client);
 			}
 
 			for (uint64_t i = 0; i < nbArriveesO; i++) {
 				Client client;
+
 				client.classe = ORDINAIRE;
 				client.dureeService = dureeClient();
 				client.minuteArrivee = temps;
+
 				ajouterClient(&fileO, client);
 			}
 
-			if (debug && temps < 20) {
+			if (temps < 20) {
 				printf("\n[ARRIVEES DES CLIENTS]\n");
 				printf("----------\n");
 
 				for (uint64_t i = 0; i < nbArriveesO; i++) {
-					Client c = fileO.donneesClients[fileO.iDernier - nbArriveesO + i];
-					printf("Ordinaire: duree = %llu\n", c.dureeService);
+					Client client = fileO.donneesClients[fileO.iDernier - nbArriveesO + i];
+
+					printf("Ordinaire: duree = %llu\n", client.dureeService);
 				}
 
 				for (uint64_t i = 0; i < nbArriveesPR; i++) {
-					Client c = filePR.donneesClients[filePR.iDernier - nbArriveesPR + 1 + i];
-					printf("Prioritaire relatif: duree = %llu\n", c.dureeService);
+					Client client = filePR.donneesClients[filePR.iDernier - nbArriveesPR + 1 + i];
+
+					printf("Prioritaire relatif: duree = %llu\n", client.dureeService);
 				}
 
 				for (uint64_t i = 0; i < nbArriveesPA; i++) {
-					Client c = filePA.donneesClients[filePA.iDernier - nbArriveesPA + 1 + i];
-					printf("Prioritaire absolu: duree = %llu\n", c.dureeService);
+					Client client = filePA.donneesClients[filePA.iDernier - nbArriveesPA + 1 + i];
+
+					printf("Prioritaire absolu: duree = %llu\n", client.dureeService);
 				}
 
 				printf("\n[FILES]\n");
@@ -915,9 +922,9 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 				printf("File O:\n");
 
 				for (uint64_t i = fileO.iPremier; i < fileO.iDernier; i++) {
-					Client c = fileO.donneesClients[i];
-					printf("Client %llu: classe = %d, duree = %llu, arrivee = %llu\n",
-						i, c.classe, c.dureeService, c.minuteArrivee);
+					Client client = fileO.donneesClients[i];
+
+					printf("Client %llu: classe = %d, duree = %llu, arrivee = %llu\n", i, client.classe, client.dureeService, client.minuteArrivee);
 				}
 
 				printf("\n");
@@ -925,9 +932,9 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 				printf("File PR:\n");
 
 				for (uint64_t i = filePR.iPremier; i < filePR.iDernier; i++) {
-					Client c = filePR.donneesClients[i];
-					printf("Client %llu: classe = %d, duree = %llu, arrivee = %llu\n",
-						i, c.classe, c.dureeService, c.minuteArrivee);
+					Client client = filePR.donneesClients[i];
+
+					printf("Client %llu: classe = %d, duree = %llu, arrivee = %llu\n", i, client.classe, client.dureeService, client.minuteArrivee);
 				}
 
 				printf("\n");
@@ -935,15 +942,16 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 				printf("File PA:\n");
 
 				for (uint64_t i = filePA.iPremier; i < filePA.iDernier; i++) {
-					Client c = filePA.donneesClients[i];
-					printf("Client %llu: classe = %d, duree = %llu, arrivee = %llu\n",
-						i, c.classe, c.dureeService, c.minuteArrivee);
+					Client client = filePA.donneesClients[i];
+
+					printf("Client %llu: classe = %d, duree = %llu, arrivee = %llu\n", i, client.classe, client.dureeService, client.minuteArrivee);
 				}
 			}
 
 			for (uint64_t index = 0; index < nbStations; index++) {
 				if (stations[index] == 0) {
 					Client client;
+
 					if (!estVide(&filePA)) {
 						client = retirerClient(&filePA);
 					}
@@ -962,16 +970,16 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 				}
 			}
 
-			uint64_t nbPAEnAttente = filePA.iDernier - filePA.iPremier + 1;
 			uint64_t nbStationsPA = 0;
 
-			for (uint64_t index = 0; index < nbStations; index++) {
-				if (classeStations[index] == PRIORITAIRE_ABSOLUE) {
+			for (uint64_t i = 0; i < nbStations; i++) {
+				if (classeStations[i] == PRIORITAIRE_ABSOLUE) {
 					nbStationsPA++;
 				}
 			}
 
-			uint64_t pertesPA = (nbPAEnAttente > 0 && nbStationsPA == nbStations) ? nbPAEnAttente : 0;
+			uint64_t nbPAEnAttente = filePA.iDernier - filePA.iPremier + 1;
+			uint64_t pertesPA = nbPAEnAttente > 0 && nbStationsPA == nbStations ? nbPAEnAttente : 0;
 
 			pertesP += pertesPA;
 
@@ -984,20 +992,23 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 				}
 			}
 
-			for (uint64_t index = 0; index < nbStations; index++) {
-				if (stations[index] > 0) {
-					switch (classeStations[index]) {
+			for (uint64_t i = 0; i < nbStations; i++) {
+				if (stations[i] > 0) {
+					switch (classeStations[i]) {
 						case ORDINAIRE:
 							tempsPresenceO++;
 							tempsOccupationO++;
+
 							break;
 						case PRIORITAIRE_RELATIVE:
 							tempsPresencePR++;
 							tempsOccupationP++;
+
 							break;
 						case PRIORITAIRE_ABSOLUE:
 							tempsPresencePA++;
 							tempsOccupationP++;
+
 							break;
 					}
 				}
@@ -1006,14 +1017,16 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 				}
 			}
 
-			if (debug && temps < 20) {
+			if (temps < 20) {
 				printf("\n[STATIONS]\n");
 				printf("----------\n");
 
-				for (uint64_t index = 0; index < nbStations; index++) {
-					char classeClient[CLASS_TAILLE];
-					classToString(classeStations[index], classeClient);
-					printf("Station %llu: %s, duree restante: %llu\n", index, classeClient, stations[index]);
+				for (uint64_t i = 0; i < nbStations; i++) {
+					char classeClient[TAILLE_MAX_CLASSE];
+
+					classToString(classeStations[i], classeClient);
+
+					printf("Station %llu: %s, duree restante: %llu\n", i, classeClient, stations[i]);
 				}
 			}
 		}
@@ -1034,62 +1047,8 @@ uint64_t nbStationsOptimal(uint64_t nbStationsMin, uint64_t nbStationsMax, uint6
 	return nbStationsMin + indexOpt;
 }
 
-void creerClient(Client* client, StatusClient classe, uint64_t dureeService, uint64_t minuteArrivee) {
-	client->classe = classe;
-	client->dureeService = dureeService;
-	client->minuteArrivee = minuteArrivee;
-}
-
-void testspartie2() {
-	File file;
-	initialiser(&file);
-	assert(estVide(&file));
-
-	Client clientA;
-	creerClient(&clientA, 0, 1, 1);
-	ajouterClient(&file, clientA);
-
-	assert(!estVide(&file));
-
-	Client clientB;
-	creerClient(&clientB, 1, 2, 2);
-	ajouterClient(&file, clientB);
-
-	assert(!estVide(&file));
-
-	Client clientC;
-	creerClient(&clientC, 2, 3, 3);
-	ajouterClient(&file, clientC);
-
-	assert(!estVide(&file));
-
-	/*
-	for (uint64_t index = 0; index < 1000; index++) {
-		if (rand() % 2 == 0) {
-			Client* client = (Client*)malloc(sizeof(Client));
-			if (client != NULL) {
-				creerClient(client, LIBRE, rand() % 2 != 0, rand() % 3 == 0 && rand() % 2 == 0);
-				ajouterClient(&file, *client);
-			}
-		}
-		else {
-			retirerClient(&file);
-		}
-	}
-	*/
-
-	assert(nbStationsOptimal(5, 10, 60, false) == 5);
-	assert(nbStationsOptimal(6, 10, 60, false) == 6);
-	assert(nbStationsOptimal(7, 10, 60, false) == 7);
-	assert(nbStationsOptimal(8, 10, 60, false) == 8);
-	assert(nbStationsOptimal(9, 10, 60, false) == 9);
-	assert(nbStationsOptimal(10, 10, 60, false) == 10);
-}
-
 void partie2(void) {
 	srand(time(NULL));
-
-	testspartie2();
 
 	/* Declaration et initialisation des valeurs des paramètres */
 
@@ -1121,7 +1080,7 @@ void partie2(void) {
 	scanf_s("%llu", &tempsSimul);
 
 	while (tempsSimul < 60) {
-		printf("[ERREUR] : la valeur du parametre tempsSimul doit etre > 60\n\n");
+		printf("[ERREUR] : la valeur du parametre tempsSimul doit etre >= 60\n\n");
 
 		printf("Valeur du parametre tempsSimul : ");
 		scanf_s("%llu", &tempsSimul);
@@ -1131,7 +1090,7 @@ void partie2(void) {
 
 	printf("-- SIMULATION --\n");
 
-	uint64_t resultat = nbStationsOptimal(nbStationsMin, nbStationsMax, tempsSimul, true);
+	uint64_t resultat = nbStationsOptimal(nbStationsMin, nbStationsMax, tempsSimul);
 
 	/* Resultat */
 
@@ -1141,9 +1100,9 @@ void partie2(void) {
 }
 
 int main(void) {
-	partie1();
+	// partie1();
 
-	//partie2();
+	partie2();
 
 	return 0;
 }
