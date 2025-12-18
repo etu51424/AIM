@@ -11,13 +11,16 @@
 #define CLASS_TAILLE 50
 #define STATION_TAILLE 500
 
-#define POKER (10 / pow(10, 5)) // Probabilité théorique d'obtention d'un POKER
-#define CARRE (450 / pow(10, 5)) // Probabilité théorique d'obtention d'un CARRE
-#define FULL (900 / pow(10, 5)) // Probabilité théorique d'obtention d'un FULL
-#define BRELAN (7200 / pow(10, 5)) // Probabilité théorique d'obtention d'un BRELAN
-#define DOUBLE_PAIRE (10800 / pow(10, 5)) // Probabilité théorique d'obtention d'une double paire
-#define PAIRE (50400 / pow(10, 5)) // Probabilité théorique d'obtention d'une paire
+/* Probabilités théoriques */
+#define POKER (10.0 / 100000.0) // Probabilité théorique d'obtention d'un POKER
+#define CARRE (450.0 / 100000.0) // Probabilité théorique d'obtention d'un CARRE
+#define FULL (900.0 / 100000.0) // Probabilité théorique d'obtention d'un FULL
+#define BRELAN (7200.0 / 100000.0) // Probabilité théorique d'obtention d'un BRELAN
+#define DOUBLE_PAIRE (10800.0 / 100000.0) // Probabilité théorique d'obtention d'une DOUBLE PAIRE
+#define PAIRE (50400.0 / 100000.0) // Probabilité théorique d'obtention d'une PAIRE
+#define DIFFERENCE (30240.0 / 100000.0) // Probabilité théorique d'obtention d'une DIFFERENCE
 
+/* Méthode - calculerPGCD() */
 uint64_t calculerPGCD(uint64_t nombre1, uint64_t nombre2) {
 	uint64_t t;
 
@@ -30,6 +33,7 @@ uint64_t calculerPGCD(uint64_t nombre1, uint64_t nombre2) {
 	return nombre1;
 }
 
+/* Méthode - determinerEstPremier() */
 bool determinerEstPremier(uint64_t nombre) {
 	if (nombre < 2) {
 		return false;
@@ -44,13 +48,13 @@ bool determinerEstPremier(uint64_t nombre) {
 	return true;
 }
 
+/* Méthode - calculerPeriode() */
 uint64_t calculerPeriode(uint64_t x0, uint64_t a, uint64_t c, uint64_t m) {
 	uint64_t i = 0;
 	uint64_t x = (a * x0 + c) % m;
 
-	while (x != x0) {
-		uint64_t next = (a * x + c) % m;
-		x = next;
+	while (x != x0 && i < m) {
+		x = (a * x + c) % m;
 
 		i++;
 	}
@@ -58,33 +62,39 @@ uint64_t calculerPeriode(uint64_t x0, uint64_t a, uint64_t c, uint64_t m) {
 	return i + 1;
 }
 
+/* Méthode - genererSuite() */
 void genererSuite(double* suiteXn, uint64_t x0, uint64_t a, uint64_t c, uint64_t m) {
 	uint64_t x = x0;
 
 	suiteXn[0] = x;
-	//printf("%llu", x);
+
+	printf("%llu ", x);
 
 	for (uint64_t i = 1; i < LONGUEUR_SUITE; i++) {
 		x = (a * x + c) % m;
-		//printf("%llu", x);
 		suiteXn[i] = x;
+
+		printf("%llu ", x);
 	}
 
-	//printf("\n\n");
+	printf("\n");
 }
 
+/* Méthode - calculerUn() */
 void calculerUn(double suiteXn[], double suiteUn[], uint64_t m) {
 	for (uint64_t i = 0; i < LONGUEUR_SUITE; i++) {
 		suiteUn[i] = suiteXn[i] / m;
 	}
 }
 
+/* Méthode - calculerYn() */
 void calculerYn(double suiteUn[], double suiteYn[]) {
 	for (uint64_t i = 0; i < LONGUEUR_SUITE; i++) {
-		suiteYn[i] = (ceil(suiteUn[i] * 10) - 1); // -1 néccésaire ?
+		suiteYn[i] = (double)(int)(suiteUn[i] * 10);
 	}
 }
 
+/* Méthode - trouverRepetition() */
 uint64_t trouverRepetition(double suiteYn[], uint64_t x) {
 	uint64_t repetition = 0;
 
@@ -97,6 +107,7 @@ uint64_t trouverRepetition(double suiteYn[], uint64_t x) {
 	return repetition;
 }
 
+/* Méthode - testFrequences34() */
 double testFrequences34(double suiteYn[]) {
 	uint64_t totalRi = 0;
 	double totalPi = 0;
@@ -134,6 +145,7 @@ double testFrequences34(double suiteYn[]) {
 	return totalKhi;
 }
 
+/* Méthode - triBulles() */
 void triBulles(int tab[], int n) {
 	for (int i = 0; i < n - 1; i++) {
 		for (int j = 0; j < n - i - 1; j++) {
@@ -146,6 +158,7 @@ void triBulles(int tab[], int n) {
 	}
 }
 
+/* Méthode - testPoker34() */
 double testPoker34(double suiteYn[]) {
 	assert(LONGUEUR_SUITE % 5 == 0);
 
@@ -155,8 +168,9 @@ double testPoker34(double suiteYn[]) {
 	uint64_t brelan = 0;
 	uint64_t doublePaire = 0;
 	uint64_t paire = 0;
+	uint64_t difference = 0;
 
-	for (uint64_t i = 0; i < LONGUEUR_SUITE / 5; i += 5) {
+	for (uint64_t i = 0; i < LONGUEUR_SUITE; i += 5) {
 		int tranche[10] = { 0 };
 
 		int a = suiteYn[i];
@@ -182,46 +196,52 @@ double testPoker34(double suiteYn[]) {
 		if (a == 5) { // POKER
 			poker++;
 		}
-		if (a == 4 && b == 1) { // CARRE
+		else if (a == 4 && b == 1) { // CARRE
 			carre++;
 		}
-		if (a == 3 && b == 2) { // FULL
+		else if (a == 3 && b == 2) { // FULL
 			full++;
 		}
-		if (a == 3 && b == 1 && c == 1) { // BRELAN
+		else if (a == 3 && b == 1 && c == 1) { // BRELAN
 			brelan++;
 		}
-		if (a == 2 && b == 2 && c == 1) { // DOUBLE PAIRE
+		else if (a == 2 && b == 2 && c == 1) { // DOUBLE PAIRE
 			doublePaire++;
 		}
-		if (a == 2 && b == 1 && c == 1 && d == 1) { // PAIRE
+		else if (a == 2 && b == 1 && c == 1 && d == 1) { // PAIRE
 			paire++;
+		}
+		else {
+			difference++; // DIFFERENCE
 		}
 	}
 
-	double khiPoker = (pow((poker - LONGUEUR_SUITE * POKER), 2)) / (LONGUEUR_SUITE * POKER);
-	double khiCarre = (pow((carre - LONGUEUR_SUITE * CARRE), 2)) / (LONGUEUR_SUITE * CARRE);
-	double khiFull = (pow((full - LONGUEUR_SUITE * FULL), 2)) / (LONGUEUR_SUITE * FULL);
-	double khiBrelan = (pow((brelan - LONGUEUR_SUITE * BRELAN), 2)) / (LONGUEUR_SUITE * BRELAN);
-	double khiDoublePaire = (pow((doublePaire - LONGUEUR_SUITE * DOUBLE_PAIRE), 2)) / (LONGUEUR_SUITE * DOUBLE_PAIRE);
-	double khiPaire = (pow((paire - LONGUEUR_SUITE * PAIRE), 2)) / (LONGUEUR_SUITE * PAIRE);
+	double khiPoker = (pow((poker - LONGUEUR_SUITE / 5 * POKER), 2)) / (LONGUEUR_SUITE / 5 * POKER);
+	double khiCarre = (pow((carre - LONGUEUR_SUITE / 5 * CARRE), 2)) / (LONGUEUR_SUITE / 5 * CARRE);
+	double khiFull = (pow((full - LONGUEUR_SUITE / 5 * FULL), 2)) / (LONGUEUR_SUITE / 5 * FULL);
+	double khiBrelan = (pow((brelan - LONGUEUR_SUITE / 5 * BRELAN), 2)) / (LONGUEUR_SUITE / 5 * BRELAN);
+	double khiDoublePaire = (pow((doublePaire - LONGUEUR_SUITE / 5 * DOUBLE_PAIRE), 2)) / (LONGUEUR_SUITE / 5 * DOUBLE_PAIRE);
+	double khiPaire = (pow((paire - LONGUEUR_SUITE / 5 * PAIRE), 2)) / (LONGUEUR_SUITE / 5 * PAIRE);
+	double khiDiff = (pow((difference - LONGUEUR_SUITE / 5 * DIFFERENCE), 2)) / (LONGUEUR_SUITE / 5 * DIFFERENCE);
 
-	char modalites[6][13] = {
+	char modalites[7][20] = {
 		"Poker",
 		"Carre",
 		"Full",
 		"Brelan",
 		"Double Paire",
-		"Paire"
+		"Paire",
+		"Difference"
 	};
 
-	double donnees[6][4] = {
-		{ poker, POKER, LONGUEUR_SUITE * POKER, khiPoker },
-		{ carre, CARRE, LONGUEUR_SUITE * CARRE, khiCarre },
-		{ full, FULL, LONGUEUR_SUITE * FULL, khiFull },
-		{ brelan, BRELAN, LONGUEUR_SUITE * BRELAN, khiBrelan },
-		{ doublePaire, DOUBLE_PAIRE, LONGUEUR_SUITE * DOUBLE_PAIRE, khiDoublePaire },
-		{ paire, PAIRE, LONGUEUR_SUITE * PAIRE, khiPaire }
+	double donnees[7][4] = {
+		{ poker, POKER, LONGUEUR_SUITE / 5 * POKER, khiPoker },
+		{ carre, CARRE, LONGUEUR_SUITE / 5 * CARRE, khiCarre },
+		{ full, FULL, LONGUEUR_SUITE / 5 * FULL, khiFull },
+		{ brelan, BRELAN, LONGUEUR_SUITE / 5 * BRELAN, khiBrelan },
+		{ doublePaire, DOUBLE_PAIRE, LONGUEUR_SUITE / 5 * DOUBLE_PAIRE, khiDoublePaire },
+		{ paire, PAIRE, LONGUEUR_SUITE / 5 * PAIRE, khiPaire },
+		{ difference, DIFFERENCE, LONGUEUR_SUITE / 5 * DIFFERENCE, khiDiff }
 	};
 
 	// Avant regroupement
@@ -231,12 +251,12 @@ double testPoker34(double suiteYn[]) {
 	double totalNpi = 0;
 	double totalKhi = 0;
 
-	printf("Xi1 - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
+	printf("Xi - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
 
 	printf("******************************\n");
 
-	for (int i = 0; i < 6; i++) {
-		printf("%s - %lf - %lf - %lf - %lf\n", modalites[i], donnees[i][0], donnees[i][1], donnees[i][2], donnees[i][3]);
+	for (int i = 0; i < 7; i++) {
+		printf("%s - %.0lf - %lf - %lf - %lf\n", modalites[i], donnees[i][0], donnees[i][1], donnees[i][2], donnees[i][3]);
 
 		totalRi += donnees[i][0];
 		totalPi += donnees[i][1];
@@ -246,7 +266,7 @@ double testPoker34(double suiteYn[]) {
 
 	printf("******************************\n");
 
-	printf("Total - %lf - %lf - %lf - %lf\n\n", totalRi, totalPi, totalNpi, totalKhi);
+	printf("Total - %.0lf - %lf - %lf - %lf\n\n", totalRi, totalPi, totalNpi, totalKhi);
 
 	// Apres regroupement
 
@@ -255,7 +275,7 @@ double testPoker34(double suiteYn[]) {
 	totalNpi = 0;
 	totalKhi = 0;
 
-	printf("Xi1 - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
+	printf("Xi - ri - pi - n.pi - (ri-n.pi)2/(n.pi)\n");
 
 	printf("******************************\n");
 
@@ -270,11 +290,11 @@ double testPoker34(double suiteYn[]) {
 		totalKhi += donnees[i][3];
 
 		i++;
-	} while (i < 6 && totalNpi <= 5);
+	} while (i < 7 && totalNpi <= 5);
 
 	printf("- %lf - %lf - %lf - %lf\n", totalRi, totalPi, totalNpi, totalKhi);
 
-	for (int j = i; j < 6; j++) {
+	for (int j = i; j < 7; j++) {
 		totalRi += donnees[j][0];
 		totalPi += donnees[j][1];
 		totalNpi += donnees[j][2];
@@ -290,6 +310,7 @@ double testPoker34(double suiteYn[]) {
 	return totalKhi;
 }
 
+/* Méthode - tableKhiCarre() */
 double tableKhiCarre(double alpha, int dl) {
 	FILE* table;
 	fopen_s(&table, "tables.csv", "r");
@@ -375,52 +396,7 @@ double tableKhiCarre(double alpha, int dl) {
 	return atof(extrait);
 }
 
-void testspartie1(void) {
-	assert(calculerPGCD(3, 5) == 1);
-	assert(calculerPGCD(15, 28) == 1);
-	assert(calculerPGCD(25, 36) == 1);
-	assert(calculerPGCD(33, 56) == 1);
-	assert(calculerPGCD(39, 80) == 1);
-
-	assert(determinerEstPremier(2));
-	assert(determinerEstPremier(13));
-	assert(determinerEstPremier(101));
-	assert(determinerEstPremier(137));
-	assert(determinerEstPremier(199));
-
-	assert(calculerPeriode(35, 13, 65, 100) == 4);
-	assert(calculerPeriode(3, 5, 5, 8) == 8);
-	assert(calculerPeriode(7, 7, 7, 8) == 2);
-	assert(calculerPeriode(7, 5, 3, 16) == 16);
-
-	assert(tableKhiCarre(0.01, 1) == 6.635);
-	assert(tableKhiCarre(0.01, 2) == 9.21);
-	assert(tableKhiCarre(0.01, 3) == 11.345);
-	assert(tableKhiCarre(0.01, 4) == 13.277);
-	assert(tableKhiCarre(0.01, 5) == 15.086);
-
-	assert(tableKhiCarre(0.05, 1) == 3.841);
-	assert(tableKhiCarre(0.05, 2) == 5.991);
-	assert(tableKhiCarre(0.05, 3) == 7.815);
-	assert(tableKhiCarre(0.05, 4) == 9.488);
-	assert(tableKhiCarre(0.05, 5) == 11.070);
-
-	assert(tableKhiCarre(0.025, 1) == 5.024);
-	assert(tableKhiCarre(0.025, 2) == 7.378);
-	assert(tableKhiCarre(0.025, 3) == 9.348);
-	assert(tableKhiCarre(0.025, 4) == 11.143);
-	assert(tableKhiCarre(0.025, 5) == 12.833);
-}
-
 void partie1(void) {
-	/* Tests */
-
-	printf("-- TESTS --\n\n");
-
-	testspartie1();
-
-	printf("[SUCCES]\n\n");
-
 	/* Declaration et initialisation des valeurs des coefficients */
 
 	printf("-- DECLARATION ET INITIALISATION DES VALEURS DES COEFFICIENTS --\n\n");
@@ -466,8 +442,6 @@ void partie1(void) {
 		printf("Valeur du coefficient x0 : ");
 		scanf_s("%llu", &x0);
 	}
-
-	printf("[SUCCES]\n\n");
 
 	/* Verification des hypotheses du theoreme de Hull-Dobell */
 
@@ -527,8 +501,6 @@ void partie1(void) {
 		printf("[CONCLUSION] : les hypotheses du theoreme du Hull-Dobell ne sont pas toutes verifiees\n\n");
 	}
 
-	printf("[SUCCES]\n\n");
-
 	/* Calcul de la periode de la suite */
 
 	printf("-- CALCUL DE LA PERIODE DE LA SUITE --\n\n");
@@ -544,17 +516,13 @@ void partie1(void) {
 
 	printf("[RESULTAT] : la periode de la suite est de %llu\n\n", periode);
 
-	printf("[SUCCES]\n\n");
-
 	/* Generation de la suite de nombres pseudo-aleatoires */
 
-	printf("-- GENERATION DE LA SUITE PSEUDO-ALEATOIRE --\n\n");
+	printf("-- GENERATION DE LA SUITE DE NOMBRES PSEUDO-ALEATOIRES --\n\n");
 
 	double suiteXn[LONGUEUR_SUITE];
 
 	genererSuite(suiteXn, x0, a, c, m);
-
-	printf("[SUCCES]\n\n");
 
 	/* Tests statistiques de validite */
 
@@ -572,8 +540,6 @@ void partie1(void) {
 	/* Test des frequences */
 
 	printf("-- TEST DES FREQUENCES --\n\n");
-
-	int dl = 9;
 
 	// Etape 1
 
@@ -602,8 +568,6 @@ void partie1(void) {
 	else {
 		printf("[DECISION] : La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
 	}
-
-	printf("[SUCCES]\n\n");
 
 	/* Test du poker */
 
@@ -638,8 +602,6 @@ void partie1(void) {
 	else {
 		printf("[DECISION] : La suite de nombres pseudo aleatoire n'est pas acceptable pour ce test\n\n");
 	}
-
-	printf("[SUCCES]\n\n");
 }
 
 /* ---------------------------------------------------------------------------------------- */
@@ -1179,19 +1141,9 @@ void partie2(void) {
 }
 
 int main(void) {
-	//partie1();
+	partie1();
+
 	//partie2();
-
-
-	double suiteXn[LONGUEUR_SUITE];
-	genererSuite(suiteXn, 1, 6364136223846793005, 1, INT64_MAX - 1);
-
-	double suiteUn[LONGUEUR_SUITE], suiteYn[LONGUEUR_SUITE];
-	calculerUn(suiteXn, suiteUn, INT64_MAX - 1);
-	calculerYn(suiteUn, suiteYn);
-
-	testFrequences34(suiteYn);
-	testPoker34(suiteYn);
 
 	return 0;
 }
